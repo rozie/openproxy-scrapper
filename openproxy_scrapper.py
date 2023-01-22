@@ -11,7 +11,8 @@ from contextlib import closing
 
 import requests
 import yaml
-from typing_extensions import Required
+
+# from typing_extensions import Required
 
 logger = logging.getLogger(__name__)
 
