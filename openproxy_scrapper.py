@@ -59,7 +59,7 @@ def worker(timeout):
 
 
 # print(threads)
-print(f"Have {len(output)} results")
+# print(f"Have {len(output)} results")
 
 # time.sleep(2 * timeout)
 
@@ -68,7 +68,7 @@ for proxy in output.keys():
     result = output[proxy]
     print(f"{ip}:{port} {result}")
 
-print(f"Have {len(output)} results")
+# print(f"Have {len(output)} results")
 
 
 def check_reachability_via_proxy(ip, port, url, timeout, type):
@@ -136,6 +136,14 @@ def parse_arguments():
         choices=["http", "https", "socks4", "socks5", "all"],
         help="Proxy type",
     )
+    parser.add_argument(
+        "-a",
+        "--active",
+        required=False,
+        default=False,
+        action="store_true",
+        help="Display only active proxies",
+    )
     args = parser.parse_args()
     return args
 
@@ -162,6 +170,19 @@ def get_proxies(data, proxy_types, timeout):
     return proxies_tmp
 
 
+def display_results(results, only_active):
+    displayed_count = 0
+    for proxy, status in results.items():
+        if only_active:
+            if status:
+                print(proxy)
+                displayed_count += 1
+        else:
+            print(proxy, status)
+            displayed_count += 1
+    print(f"Displayed {displayed_count} results")
+
+
 def main():
     args = parse_arguments()
 
@@ -185,7 +206,7 @@ def main():
     for proxy in get_proxies(data=data, proxy_types=proxy_types, timeout=args.timeout):
         proxies.add(proxy)
 
-    print(len(proxies))
+    print(f"Found {len(proxies)} proxies to check")
 
     threads = []
     for i in range(args.threads):
@@ -196,8 +217,7 @@ def main():
     for thread in threads:
         thread.join()
 
-    for proxy in output.keys():
-        print(proxy, output[proxy])
+    display_results(output, args.active)
 
 
 if __name__ == "__main__":
