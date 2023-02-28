@@ -22,24 +22,29 @@ proxies = set()
 
 def check_port_open(host, port, timeout):
     res = False
+    start = time.time_ns()
     with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
         sock.settimeout(timeout)
         if sock.connect_ex((host, port)) == 0:
             res = True
-    return res
+    end = time.time_ns()
+    if start and end:
+        diff_ms = (end - start) // 1000000
+    return res, diff_ms
 
 
 def worker(timeout):
     while proxies:
         proxy = proxies.pop()
         ip, port, type_ = proxy
-        result = check_port_open(ip, port, timeout)
+        result, exec_time = check_port_open(ip, port, timeout)
         results = {
             'IP': ip,
             'port': port,
             'type': type_,
             'up': result,
-            'outgoing IP': None
+            'outgoing IP': None,
+            'delay': exec_time
         }
         output[proxy] = results
 
