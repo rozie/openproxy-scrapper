@@ -30,7 +30,6 @@ def check_port_open(host, port, timeout):
 
 
 def worker(timeout):
-    # print "worker...."
     while proxies:
         proxy = proxies.pop()
         ip, port, type_ = proxy
@@ -118,18 +117,16 @@ def parse_arguments():
 def get_proxies(data, proxy_types, timeout):
     proxies_tmp = set()
     for type_ in proxy_types:
-        print(type_)
+        logger.debug(f"Checking proxy type {type_}")
         for url in data.get(type_):
-            # print(url)
             try:
                 result = requests.get(url, timeout=timeout)
-                # print(result.status_code)
+                logger.debug(f"URL: {url}, status: {result.status_code}")
                 for line in result.text.splitlines():
                     m = re.search(r"(\d+\.\d+\.\d+\.\d+):(\d+)", line)
                     if m:
                         ip = m.group(1)
                         port = int(m.group(2))
-                        # print(ip, port)
                         entry = (ip, port, type_)
                         proxies_tmp.add(entry)
             except Exception as e:
@@ -147,7 +144,7 @@ def display_results(results, only_active):
         else:
             print(proxy, status)
             displayed_count += 1
-    print(f"Displayed {displayed_count} results")
+    logger.debug(f"Displayed {displayed_count} results")
 
 
 def main():
@@ -173,7 +170,7 @@ def main():
     for proxy in get_proxies(data=data, proxy_types=proxy_types, timeout=args.timeout):
         proxies.add(proxy)
 
-    print(f"Found {len(proxies)} proxies to check")
+    logger.debug(f"Found {len(proxies)} proxies to check")
 
     threads = []
     for i in range(args.threads):
