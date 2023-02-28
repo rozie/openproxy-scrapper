@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import argparse
+import json
 import logging
 import re
 import socket
@@ -141,15 +142,17 @@ def get_proxies(data, proxy_types, timeout):
 
 
 def display_results(results, only_active):
+    output = []
     displayed_count = 0
     for proxy, data in results.items():
         if only_active:
             if data.get('up'):
-                print(data)
+                output.append(data)
                 displayed_count += 1
         else:
-            print(data)
+            output.append(data)
             displayed_count += 1
+    print(json.dumps(output, indent=4))
     logger.debug(f"Displayed {displayed_count} results")
 
 
