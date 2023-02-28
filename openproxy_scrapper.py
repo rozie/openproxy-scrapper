@@ -33,7 +33,14 @@ def worker(timeout):
         proxy = proxies.pop()
         ip, port, type_ = proxy
         result = check_port_open(ip, port, timeout)
-        output[proxy] = result
+        results = {
+            'IP': ip,
+            'port': port,
+            'type': type_,
+            'up': result,
+            'outgoing IP': None
+        }
+        output[proxy] = results
 
 
 def check_reachability_via_proxy(ip, port, url, timeout, type):
@@ -135,13 +142,13 @@ def get_proxies(data, proxy_types, timeout):
 
 def display_results(results, only_active):
     displayed_count = 0
-    for proxy, status in results.items():
+    for proxy, data in results.items():
         if only_active:
-            if status:
-                print(proxy)
+            if data.get('up'):
+                print(data)
                 displayed_count += 1
         else:
-            print(proxy, status)
+            print(data)
             displayed_count += 1
     logger.debug(f"Displayed {displayed_count} results")
 
@@ -156,6 +163,7 @@ def main():
         logging.basicConfig(level=logging.INFO)
 
     # load config file
+    logger.debug("Using config: {args.config}")
     try:
         with open(args.config, "r") as config:
             data = yaml.safe_load(config)
@@ -171,6 +179,7 @@ def main():
 
     logger.debug(f"Found {len(proxies)} proxies to check")
 
+    logger.debug(f"Running {args.threads} threads")
     threads = []
     for i in range(args.threads):
         thread = threading.Thread(target=worker, name=i, args=(args.timeout,))
