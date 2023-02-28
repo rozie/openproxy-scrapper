@@ -12,19 +12,15 @@ from contextlib import closing
 import requests
 import yaml
 
-# from typing_extensions import Required
 
 logger = logging.getLogger(__name__)
 
-# file_ip_port = "proxy_test.txt"
-# timeout = 10
-# num_threads = 128
+
 output = {}
 proxies = set()
 
 
 def check_port_open(host, port, timeout):
-    # print(host, port)
     res = False
     with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
         sock.settimeout(timeout)
@@ -33,42 +29,13 @@ def check_port_open(host, port, timeout):
     return res
 
 
-# with open(file_ip_port, "r", encoding="utf-8") as f:
-#     lines = f.readlines()
-
-# proxies = set()
-# for line in lines:
-#     m = re.search(r"(\d+\.\d+\.\d+\.\d+):(\d+)", line)
-#     if m:
-#         ip = m.group(1)
-#         port = int(m.group(2))
-#         proxies.add((ip, port))
-
-# print(f"Have {len(proxies)} proxies")
-
-
 def worker(timeout):
     # print "worker...."
     while proxies:
-        # if len(proxies) % 10 == 0:
-        #     print(f"{len(proxies)} left")
         proxy = proxies.pop()
         ip, port, type_ = proxy
         result = check_port_open(ip, port, timeout)
         output[proxy] = result
-
-
-# print(threads)
-# print(f"Have {len(output)} results")
-
-# time.sleep(2 * timeout)
-
-for proxy in output.keys():
-    ip, port = proxy
-    result = output[proxy]
-    print(f"{ip}:{port} {result}")
-
-# print(f"Have {len(output)} results")
 
 
 def check_reachability_via_proxy(ip, port, url, timeout, type):
