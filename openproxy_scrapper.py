@@ -12,7 +12,6 @@ from contextlib import closing
 import requests
 import yaml
 
-
 logger = logging.getLogger(__name__)
 
 
