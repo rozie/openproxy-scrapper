@@ -33,38 +33,59 @@ def check_port_open(host, port, timeout):
     return res, diff_ms
 
 
-def worker(timeout):
+def worker(args):
+    url = "https://httpbin.org/ip"
     while proxies:
         proxy = proxies.pop()
         ip, port, type_ = proxy
-        result, exec_time = check_port_open(ip, port, timeout)
+        result, exec_time = check_port_open(ip, port, args.timeout)
+        ext_ip = None
+        if result:
+            if args.external:
+                ext_ip = check_external_ip(ip, port, url, args.timeout, type_)
         results = {
             'IP': ip,
             'port': port,
             'type': type_,
             'up': result,
-            'outgoing IP': None,
+            'outgoing IP': ext_ip,
             'delay': exec_time
         }
         output[proxy] = results
 
 
-def check_reachability_via_proxy(ip, port, url, timeout, type):
-    if not type:
-        type = "http"
-    if type not in ["http", "https", "socks4", "socks5"]:
+def check_reachability_via_proxy(ip, port, url, timeout, type_):
+    if not type_:
+        type_ = "http"
+    if type_ not in ["http", "https", "socks4", "socks5"]:
         return False
-    proxy = f"{type}://{ip}:{port}/"
+    proxy = f"{type_}://{ip}:{port}/"
     proxies = {"https": proxy, "http": proxy}
     try:
         response = requests.get(url, proxies=proxies, timeout=timeout)
         if response.status_code == 200:
-            origin = response.json().get("origin")
-            return origin
+            return True
     except Exception as e:
-        # print(proxy, e)
+        logger.error(f"Error while checking reachibility {ip} {e}")
+    return False
+
+
+def check_external_ip(ip, port, url, timeout, type_):
+    if not type_:
+        type_ = "http"
+    if type_ not in ["http", "https", "socks4", "socks5"]:
         return False
-    return origin
+    proxy = f"{type_}://{ip}:{port}/"
+    proxies = {"https": proxy, "http": proxy}
+    try:
+        response = requests.get(url, proxies=proxies, timeout=timeout, verify=False)
+        if response.status_code == 200:
+            ext_ip = response.json().get("origin")
+            return ext_ip
+    except Exception as e:
+        logger.error(f"Error while fetching external IP for proxy {ip}: {e}")
+    return None
+
 
 
 # # HTTPS check
@@ -113,6 +134,22 @@ def parse_arguments():
         required=True,
         choices=["http", "https", "socks4", "socks5", "all"],
         help="Proxy type",
+    )
+    parser.add_argument(
+        "-e",
+        "--external",
+        required=False,
+        default=False,
+        action="store_true",
+        help="Check external (outgoing) proxy IP. Slow.",
+    )
+    parser.add_argument(
+        "-r",
+        "--reachibility",
+        required=False,
+        default=False,
+        action="store_true",
+        help="Check if URL works via proxy. Slow.",
     )
     parser.add_argument(
         "-a",
@@ -190,7 +227,7 @@ def main():
     logger.debug(f"Running {args.threads} threads")
     threads = []
     for i in range(args.threads):
-        thread = threading.Thread(target=worker, name=i, args=(args.timeout,))
+        thread = threading.Thread(target=worker, name=i, args=(args,))
         threads.append(thread)
         thread.start()
 
